@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class TimeController : MonoBehaviour
@@ -7,11 +8,15 @@ public class TimeController : MonoBehaviour
     public Light directionalLight;
     public float dayDuration = 120f; // Duração de um dia em segundos
 
+    
+    public float skyboxRotationSpeed = 1.0f;
+
     [Header("Light Colors")]
     public Color morningColor = new Color(1f, 0.64f, 0.32f); // Laranja
     public Color dayColor = Color.white;
     public Color eveningColor = new Color(1f, 0.64f, 0.32f); // Laranja
     public Color nightColor = new Color(0.2f, 0.2f, 0.35f); // Azul Escuro
+
 
     [Header("Initial Time")]
     [Range(0, 1)]
@@ -27,10 +32,19 @@ public class TimeController : MonoBehaviour
 
     void Update()
     {
-        time += Time.deltaTime / dayDuration;
-        if (time >= 1) time = 0;
+        if(!GameManager.Instance.isPaused)
+        {
+            time += Time.deltaTime / dayDuration;
+            if (time >= 1) time = 0;
 
-        UpdateLighting(time);
+            UpdateLighting(time);
+            SkyboxMovement();
+        }
+    }
+
+    void SkyboxMovement()
+    {
+         RenderSettings.skybox.SetFloat("_Rotation", Time.time * skyboxRotationSpeed);
     }
 
     void UpdateLighting(float time)
@@ -43,21 +57,25 @@ public class TimeController : MonoBehaviour
         {
             // Manhã: do azul escuro ao laranja
             directionalLight.color = Color.Lerp(nightColor, morningColor, time * 4);
+            RenderSettings.skybox.SetColor("_Tint",Color.Lerp(nightColor, morningColor, time * 4)* new Color(1f,1f,1f,0.5f));
         }
         else if (time <= 0.5f)
         {
             // Dia: do laranja ao branco
             directionalLight.color = Color.Lerp(morningColor, dayColor, (time - 0.25f) * 4);
+            RenderSettings.skybox.SetColor("_Tint",Color.Lerp(morningColor, dayColor, (time - 0.25f) * 4)* new Color(1f,1f,1f,0.5f));
         }
         else if (time <= 0.75f)
         {
             // Tarde: do branco ao laranja
             directionalLight.color = Color.Lerp(dayColor, eveningColor, (time - 0.5f) * 4);
+            RenderSettings.skybox.SetColor("_Tint",Color.Lerp(dayColor, eveningColor, (time - 0.5f) * 4)* new Color(1f,1f,1f,0.5f));
         }
         else
         {
             // Noite: do laranja ao azul escuro
             directionalLight.color = Color.Lerp(eveningColor, nightColor, (time - 0.75f) * 4);
+            RenderSettings.skybox.SetColor("_Tint", Color.Lerp(eveningColor, nightColor, (time - 0.75f) * 4) * new Color(1f,1f,1f,0.5f));
         }
 
         // Modifica a intensidade da luz com base na posição
